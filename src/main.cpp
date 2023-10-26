@@ -95,6 +95,10 @@ int main(int argc, char** argv)
                     debugBVHLeafId = std::max(0, debugBVHLeafId - 1);
 
                 } break;
+                case GLFW_KEY_M: {
+                    viewMode = viewMode == ViewMode::Rasterization ? ViewMode::RayTracing : ViewMode::Rasterization;
+
+                } break;
                 case GLFW_KEY_ESCAPE: {
                     window.close();
                 } break;

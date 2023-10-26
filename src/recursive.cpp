@@ -76,7 +76,7 @@ Ray generateReflectionRay(Ray ray, HitInfo hitInfo)
     return Ray {};
 }
 
-// TODO: Standard feature
+// DONE: Standard feature
 // Given an incident ray and a intersection point, generate a passthrough ray for transparency,
 // starting at the intersection point and continuing in the same direction.
 // - Ray;     the indicent ray
@@ -85,8 +85,10 @@ Ray generateReflectionRay(Ray ray, HitInfo hitInfo)
 // This method is unit-tested, so do not change the function signature.
 Ray generatePassthroughRay(Ray ray, HitInfo hitInfo)
 {
-    // TODO: generate a passthrough ray
-    return Ray {};
+    // Origin of intersection with the plane
+    float epsilon = 1e-6;
+    glm::vec3 origin = ray.origin + (ray.t + epsilon) * ray.direction;
+    return Ray {origin, ray.direction, 1};
 }
 
 // TODO: standard feature
@@ -106,7 +108,7 @@ void renderRaySpecularComponent(RenderState& state, Ray ray, const HitInfo& hitI
     // ...
 }
 
-// TODO: standard feature
+// DONE: standard feature
 // Given a camera ray (or secondary ray) and an intersection, evaluates the contribution
 // of a passthrough transparent ray, recursively evaluating renderRay(..., depth + 1) along this ray,
 // and correctly alpha blending the result with the current intersection's hit color
@@ -117,8 +119,14 @@ void renderRaySpecularComponent(RenderState& state, Ray ray, const HitInfo& hitI
 // - rayDepth; current recursive ray depth
 // This method is unit-tested, so do not change the function signature.
 void renderRayTransparentComponent(RenderState& state, Ray ray, const HitInfo& hitInfo, glm::vec3& hitColor, int rayDepth)
-{
-    // TODO; you should first implement generatePassthroughRay()
-    Ray r = generatePassthroughRay(ray, hitInfo);
-    // ...
+{    
+    // Generate the passthrough ray
+    Ray passthrough = generatePassthroughRay(ray, hitInfo);
+
+    // Recursively perform ray tracing with the generated passthrough ray
+    glm::vec3 passthroughColor = renderRay(state, passthrough, rayDepth + 1);
+
+    // Combine colors using alpha blending
+    float alpha = hitInfo.material.transparency;
+    hitColor = (1.0f - alpha) * hitColor + alpha * passthroughColor;
 }
