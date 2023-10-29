@@ -81,11 +81,17 @@ std::vector<Ray> generatePixelRays(RenderState& state, const Trackball& camera, 
 // This method is unit-tested, so do not change the function signature.
 std::vector<Ray> generatePixelRaysMultisampled(RenderState& state, const Trackball& camera, glm::ivec2 pixel, glm::ivec2 screenResolution)
 {
-    // Generate numSamples camera rays uniformly distributed across the pixel. Use
-    // Hint; use `state.sampler.next*d()` to generate random samples in [0, 1).
     auto numSamples = state.features.numPixelSamples;
     std::vector<Ray> rays;
-    // ...
+    for (int i = 0; i < numSamples; ++i) {
+        float x = state.sampler.next_1d() + pixel.x;
+        float y = state.sampler.next_1d() + pixel.y;
+        glm::vec2 position = (glm::vec2(x, y) + 0.5f) / glm::vec2(screenResolution) * 2.f - 1.f;
+        Ray ray;
+        ray.origin = camera.position();
+        ray.direction = glm::normalize(camera.generateRay(position).direction);
+        rays.push_back(ray);
+    }
     return rays;
 }
 
@@ -102,10 +108,18 @@ std::vector<Ray> generatePixelRaysMultisampled(RenderState& state, const Trackba
 // not go on a hunting expedition for your implementation, so please keep it here!
 std::vector<Ray> generatePixelRaysStratified(RenderState& state, const Trackball& camera, glm::ivec2 pixel, glm::ivec2 screenResolution)
 {
-    // Generate numSamples * numSamples camera rays as jittered samples across the pixel.
-    // Hint; use `state.sampler.next*d()` to generate random samples in [0, 1).
     auto numSamples = static_cast<uint32_t>(std::round(std::sqrt(float(state.features.numPixelSamples))));
     std::vector<Ray> rays;
-    // ...
+    for (int i = 0; i < numSamples; ++i) {
+        for (int j = 0; j < numSamples; ++j) {
+            float x = state.sampler.next_1d() + pixel.x + (i + state.sampler.next_1d()) / numSamples;
+            float y = state.sampler.next_1d() + pixel.y + (j + state.sampler.next_1d()) / numSamples;
+            glm::vec2 position = (glm::vec2(x, y) + 0.5f) / glm::vec2(screenResolution) * 2.f - 1.f;
+            Ray ray;
+            ray.origin = camera.position();
+            ray.direction = glm::normalize(camera.generateRay(position).direction);
+            rays.push_back(ray);
+        }
+    }
     return rays;
 }
