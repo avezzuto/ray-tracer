@@ -1,8 +1,8 @@
 #include "recursive.h"
-#include "draw.h"
 #include "bvh_interface.h"
-#include "intersect.h"
+#include "draw.h"
 #include "extra.h"
+#include "intersect.h"
 #include "light.h"
 
 // This function is provided as-is. You do not have to implement it.
@@ -71,9 +71,11 @@ glm::vec3 renderRay(RenderState& state, Ray ray, int rayDepth)
 // This method is unit-tested, so do not change the function signature.
 Ray generateReflectionRay(Ray ray, HitInfo hitInfo)
 {
-    // TODO: generate a mirrored ray
-    //       if you use glm::reflect, you will not get points for this method!
-    return Ray {};
+    glm::vec3 reflectionDirection = ray.direction - 2.0f * glm::dot(ray.direction, hitInfo.normal) * hitInfo.normal;
+    Ray reflectedRay;
+    reflectedRay.origin = hitInfo.barycentricCoord;
+    reflectedRay.direction = reflectionDirection;
+    return reflectedRay;
 }
 
 // DONE: Standard feature
@@ -88,7 +90,7 @@ Ray generatePassthroughRay(Ray ray, HitInfo hitInfo)
     // Origin of intersection with the plane
     float epsilon = 1e-6;
     glm::vec3 origin = ray.origin + (ray.t + epsilon) * ray.direction;
-    return Ray {origin, ray.direction, 1};
+    return Ray { origin, ray.direction, 1 };
 }
 
 // TODO: standard feature
@@ -103,10 +105,15 @@ Ray generatePassthroughRay(Ray ray, HitInfo hitInfo)
 // This method is unit-tested, so do not change the function signature.
 void renderRaySpecularComponent(RenderState& state, Ray ray, const HitInfo& hitInfo, glm::vec3& hitColor, int rayDepth)
 {
-    // TODO; you should first implement generateReflectionRay()
-    Ray r = generateReflectionRay(ray, hitInfo);
-    // ...
+    Ray reflectedRay = generateReflectionRay(ray, hitInfo);
+    glm::vec3 ks = hitInfo.material.ks;
+    if (glm::length(ks) == 0.0f) {
+        return;
+    }
+    glm::vec3 reflectedColor = renderRay(state, reflectedRay, rayDepth + 1);
+    hitColor += ks * reflectedColor;
 }
+
 
 // DONE: standard feature
 // Given a camera ray (or secondary ray) and an intersection, evaluates the contribution
@@ -119,7 +126,7 @@ void renderRaySpecularComponent(RenderState& state, Ray ray, const HitInfo& hitI
 // - rayDepth; current recursive ray depth
 // This method is unit-tested, so do not change the function signature.
 void renderRayTransparentComponent(RenderState& state, Ray ray, const HitInfo& hitInfo, glm::vec3& hitColor, int rayDepth)
-{    
+{
     // Generate the passthrough ray
     Ray passthrough = generatePassthroughRay(ray, hitInfo);
 
