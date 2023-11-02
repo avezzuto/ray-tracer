@@ -85,7 +85,7 @@ void postprocessImageWithBloom(const Scene& scene, const Features& features, con
         return;
     }
 
-    // Apply a 7*7 Gaussian filter
+    // Apply a Gaussian filter with size 7
     const int n = 7;
     float filter[n];
     filter[0] = n;
