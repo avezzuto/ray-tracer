@@ -249,7 +249,6 @@ bool intersectRayWithBVH(RenderState& state, const BVHInterface& bvh, Ray& ray, 
         //
         // Note that it is entirely possible for a ray to hit a leaf node, but not its primitives,
         // and it is likewise possible for a ray to hit both children of a node.
-         std::vector<int> stack;
        std::vector<int> stack;
        float_t copy = ray.t;
        if (intersectRayWithShape(nodes.front().aabb, ray)) {
