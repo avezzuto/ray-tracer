@@ -38,9 +38,6 @@ void renderImage(const Scene& scene, const BVHInterface& bvh, const Features& fe
 // This method forwards to `generatePixelRaysMultisampled` and `generatePixelRaysStratified` when necessary.
 std::vector<Ray> generatePixelRays(RenderState &state, const Trackball& camera, glm::ivec2 pixel, glm::ivec2 screenResolution);
 
-
-std::vector<Ray> generatePixelRaysWithTime(RenderState& state, const Trackball& camera, glm::ivec2 pixel, glm::ivec2 screenResolution, float time);
-
 /* Unfinished render code; you have to implement the following method */
 
 // TODO: standard feature
