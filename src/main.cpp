@@ -95,10 +95,6 @@ int main(int argc, char** argv)
                     debugBVHLeafId = std::max(0, debugBVHLeafId - 1);
 
                 } break;
-                case GLFW_KEY_M: {
-                    viewMode = viewMode == ViewMode::Rasterization ? ViewMode::RayTracing : ViewMode::Rasterization;
-
-                } break;
                 case GLFW_KEY_ESCAPE: {
                     window.close();
                 } break;
@@ -201,6 +197,13 @@ int main(int argc, char** argv)
                 if (config.features.extra.enableMotionBlur) {
                     ImGui::Indent();
                     // Add motion blur settings here, if necessary
+                    ImGui::Unindent();
+                }
+                ImGui::Checkbox("Motion blur with debug", &config.features.extra.enableMotionBlurDebug);
+                if (config.features.extra.enableMotionBlurDebug) {
+                    ImGui::Indent();
+                    float minTime = 0.0f, maxTime = 1.0f;
+                    ImGui::SliderScalar("Time", ImGuiDataType_Float, &config.features.extra.time, &minTime, &maxTime);
                     ImGui::Unindent();
                 }
                 ImGui::Checkbox("Glossy reflections", &config.features.extra.enableGlossyReflection);

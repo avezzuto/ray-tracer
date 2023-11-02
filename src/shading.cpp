@@ -80,19 +80,8 @@ glm::vec3 computeLambertianModel(RenderState& state, const glm::vec3& cameraDire
 // This method is unit-tested, so do not change the function signature.
 glm::vec3 computePhongModel(RenderState& state, const glm::vec3& cameraDirection, const glm::vec3& lightDirection, const glm::vec3& lightColor, const HitInfo& hitInfo)
 {
-    glm::vec3 kd = sampleMaterialKd(state, hitInfo);
-    glm::vec3 ks = hitInfo.material.ks;
-    float shininess = hitInfo.material.shininess;
-
-    glm::vec3 N = hitInfo.normal;
-    glm::vec3 L = lightDirection;
-    glm::vec3 V = cameraDirection;
-    glm::vec3 R = glm::normalize(glm::reflect(-L, N));
-
-    float diffuseTerm = std::max(glm::dot(N, L), 0.0f);
-    float specularTerm = std::pow(std::max(glm::dot(R, V), 0.0f), shininess);
-
-    return lightColor * (kd * diffuseTerm + ks * specularTerm);
+    // TODO: Implement phong shading
+    return sampleMaterialKd(state, hitInfo) * lightColor;
 }
 
 // TODO: Standard feature
@@ -112,19 +101,8 @@ glm::vec3 computePhongModel(RenderState& state, const glm::vec3& cameraDirection
 // This method is unit-tested, so do not change the function signature.
 glm::vec3 computeBlinnPhongModel(RenderState& state, const glm::vec3& cameraDirection, const glm::vec3& lightDirection, const glm::vec3& lightColor, const HitInfo& hitInfo)
 {
-    glm::vec3 kd = sampleMaterialKd(state, hitInfo);
-    glm::vec3 ks = hitInfo.material.ks;
-    float shininess = hitInfo.material.shininess;
-
-    glm::vec3 N = hitInfo.normal;
-    glm::vec3 L = lightDirection;
-    glm::vec3 V = cameraDirection;
-    glm::vec3 H = glm::normalize(L + V);
-
-    float diffuseTerm = std::max(glm::dot(N, L), 0.0f);
-    float specularTerm = std::pow(std::max(glm::dot(N, H), 0.0f), shininess);
-
-    return lightColor * (kd * diffuseTerm + ks * specularTerm);
+    // TODO: Implement blinn-phong shading
+    return sampleMaterialKd(state, hitInfo) * lightColor;
 }
 
 // TODO: Standard feature
@@ -136,26 +114,7 @@ glm::vec3 computeBlinnPhongModel(RenderState& state, const glm::vec3& cameraDire
 // This method is unit-tested, so do not change the function signature.
 glm::vec3 LinearGradient::sample(float ti) const
 {
-    if (components.empty()) {
-        return glm::vec3(0.0f);
-    }
-
-    if (ti <= components.front().t) {
-        return components.front().color;
-    }
-
-    if (ti >= components.back().t) {
-        return components.back().color;
-    }
-
-    for (size_t i = 0; i < components.size() - 1; ++i) {
-        if (components[i].t <= ti && ti <= components[i + 1].t) {
-                float t = (ti - components[i].t) / (components[i + 1].t - components[i].t);
-                return glm::mix(components[i].color, components[i + 1].color, t);
-        }
-    }
-
-    return glm::vec3(0.0f);
+    return glm::vec3(0.5f);
 }
 
 // TODO: Standard feature
@@ -176,6 +135,5 @@ glm::vec3 LinearGradient::sample(float ti) const
 glm::vec3 computeLinearGradientModel(RenderState& state, const glm::vec3& cameraDirection, const glm::vec3& lightDirection, const glm::vec3& lightColor, const HitInfo& hitInfo, const LinearGradient& gradient)
 {
     float cos_theta = glm::dot(lightDirection, hitInfo.normal);
-    glm::vec3 kd = gradient.sample(cos_theta);
-    return kd * lightColor;
+    return glm::vec3(0.f);
 }

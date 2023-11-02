@@ -109,6 +109,18 @@ Ray Trackball::generateRay(const glm::vec2& pixel) const
     return ray;
 }
 
+Ray Trackball::generateRayWithTime(const glm::vec2& pixel, float time) const
+{
+    const glm::vec3 cameraSpaceDirection = glm::normalize(glm::vec3(-pixel.x * m_halfScreenSpaceWidth, pixel.y * m_halfScreenSpaceHeight, 1.0f));
+
+    Ray ray;
+    ray.origin = position();
+    ray.direction = glm::quat(m_rotationEulerAngles) * cameraSpaceDirection;
+    ray.t = std::numeric_limits<float>::max();
+    ray.time = time;
+    return ray;
+}
+
 glm::vec3 Trackball::forward() const
 {
     return glm::quat(m_rotationEulerAngles) * glm::vec3(0, 0, 1);
