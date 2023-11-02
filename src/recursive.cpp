@@ -26,6 +26,19 @@ glm::vec3 renderRay(RenderState& state, Ray ray, int rayDepth)
 {
     // Trace the ray into the scene. If nothing was hit, return early
     HitInfo hitInfo;
+
+    // If only motion blur is enabled, change the position of the sphere using the time of the ray
+    if (!state.features.extra.enableMotionBlurDebug && state.features.extra.enableMotionBlur && state.scene.type == SceneType::Spheres) {
+        glm::vec3 spherePosition = state.scene.spheres[0].getPositionAtTime(ray.time);
+        state.scene.spheres[0].center = spherePosition;
+    }
+
+    // If only motion blur debug is enable, change the position of the sphere using the slider from the GUI
+    if (state.features.extra.enableMotionBlurDebug && !state.features.extra.enableMotionBlur && state.scene.type == SceneType::Spheres) {
+        glm::vec3 spherePosition = state.scene.spheres[0].getPositionAtTime(state.features.extra.time);
+        state.scene.spheres[0].center = spherePosition;
+    }
+
     if (!state.bvh.intersect(state, ray, hitInfo)) {
         drawRay(ray, glm::vec3(1, 0, 0));
         return sampleEnvironmentMap(state, ray);

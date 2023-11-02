@@ -203,6 +203,14 @@ int main(int argc, char** argv)
                     // Add motion blur settings here, if necessary
                     ImGui::Unindent();
                 }
+                // Extra checkbox and slider for motion blur debug (moves sphere along a Bezier curve)
+                ImGui::Checkbox("Motion blur with debug", &config.features.extra.enableMotionBlurDebug);
+                if (config.features.extra.enableMotionBlurDebug) {
+                    ImGui::Indent();
+                    float minTime = 0.0f, maxTime = 1.0f;
+                    ImGui::SliderScalar("Time", ImGuiDataType_Float, &config.features.extra.time, &minTime, &maxTime);
+                    ImGui::Unindent();
+                }
                 ImGui::Checkbox("Glossy reflections", &config.features.extra.enableGlossyReflection);
                 if (config.features.extra.enableGlossyReflection) {
                     uint32_t minSamples = 1u, maxSamples = 64u;
