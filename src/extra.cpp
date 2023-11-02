@@ -20,7 +20,7 @@ void renderImageWithDepthOfField(const Scene& scene, const BVHInterface& bvh, co
     // ...
 }
 
-// DONE; Extra feature
+// TODO; Extra feature
 // Given the same input as for `renderImage()`, instead render an image with your own implementation
 // of motion blur. Here, you integrate over a time domain, and not just the pixel's image domain,
 // to give objects the appearance of "fast movement".
@@ -31,58 +31,10 @@ void renderImageWithMotionBlur(const Scene& scene, const BVHInterface& bvh, cons
     if (!features.extra.enableMotionBlur) {
         return;
     }
-#ifdef NDEBUG // Enable multi threading in Release mode
-#pragma omp parallel for schedule(guided)
-#endif
 
-    for (int y = 0; y < screen.resolution().y; y++) {
-        for (int x = 0; x != screen.resolution().x; x++) {
-            // Assemble useful objects on a per-pixel basis; e.g. a per-thread sampler
-            // Note; we seed the sampler for consistenct behavior across frames
-    
-            glm::vec3 currentColor = { 0.0f, 0.0f, 0.0f };
-            int samples = 1;
-            int mod = 0;
-
-            for (int i = 0; i < samples; i++) {
-                RenderState state = {
-                    .scene = scene,
-                    .features = features,
-                    .bvh = bvh,
-                    .sampler = { static_cast<uint32_t>(screen.resolution().y * x + y) }
-                };
-                std::random_device rd;
-                std::mt19937 gen(rd());
-                std::uniform_real_distribution<float> dis(0.0f, 1.0f);
-                float random = dis(gen);
-                auto rays = generatePixelRaysWithTime(state, camera, { x, y }, screen.resolution(), random);
-                auto L = renderRays(state, rays);
-                if (L != glm::vec3{ 0.0f, 0.0f, 0.0f }) {
-                    currentColor += L;
-                    mod++;
-                }
-            }
-
-            currentColor.x = currentColor.x / samples;
-            currentColor.y = currentColor.y / samples;
-            currentColor.z = currentColor.z / samples;
-
-            screen.setPixel(x, y, currentColor);
-
-        }
-    }
 }
 
-double coefficient(long n, long k)
-{
-    if (k == 0)
-        return 1;
-    if (k > n / 2)
-        return coefficient(n, n - k);
-    return n * coefficient(n - 1, k - 1) / k;
-}
-
-// DONE; Extra feature
+// TODO; Extra feature
 // Given a rendered image, compute and apply a bloom post-processing effect to increase bright areas.
 // This method is not unit-tested, but we do expect to find it **exactly here**, and we'd rather
 // not go on a hunting expedition for your implementation, so please keep it here!
@@ -92,54 +44,11 @@ void postprocessImageWithBloom(const Scene& scene, const Features& features, con
         return;
     }
 
-    const int n = 7;
-    float filter[n];
-    filter[0] = n;
-    float sum = filter[0];
-    for (int k = 1; k < n; k++)
-    {
-        filter[k] = filter[k-1] * ((n-k)/(k + 1));
-        sum += filter[k];
-    }
-
-    for (int k = 0; k < n; k++) {
-        filter[k] = filter[k] /sum;
-    }
-
-    int size = image.resolution().y * image.resolution().x;
-    glm::vec3* brightImage = new glm::vec3[size];
-    for (int row = 0; row < image.resolution().y; row++) {
-        for (int col = 0; col < image.resolution().x; col++) {
-            const int i = image.indexAt(row, col);
-            glm::vec3 currentColor = image.pixels()[i];
-            if (currentColor.x > 0.9 || currentColor.y > 0.9 || currentColor.z > 0.9) {
-                brightImage[i] = currentColor;
-            } else {
-                brightImage[i] = { 0.0f, 0.0f, 0.0f };
-            }
-        }
-    }
-
-    for (int pixel = 0; pixel < size; pixel++) {
-        for (int x = 0; x < n; x++) {
-            if (pixel + x < size) {
-                brightImage[pixel + x] = brightImage[pixel + x] * filter[0];
-            }
-        }
-    }
-    
-    for (int row = 0; row < image.resolution().y; row++) {
-        for (int col = 0; col < image.resolution().x; col++) {
-            const int i = image.indexAt(row, col);
-            glm::vec3 color = image.pixels()[i] + brightImage[i];
-            image.setPixel(row, col, color);
-        }
-    }
-
+    // ...
 }
 
 
-// NOT SURE IF WORKS; Extra feature
+// TODO; Extra feature
 // Given a camera ray (or reflected camera ray) and an intersection, evaluates the contribution of a set of
 // glossy reflective rays, recursively evaluating renderRay(..., depth + 1) along each ray, and adding the
 // results times material.ks to the current intersection's hit color.
@@ -154,41 +63,7 @@ void renderRayGlossyComponent(RenderState& state, Ray ray, const HitInfo& hitInf
 {
     // Generate an initial specular ray, and base secondary glossies on this ray
     // auto numSamples = state.features.extra.numGlossySamples;
-    
-    
-    glm::vec3 wVec = glm::normalize(ray.origin + ray.t * ray.direction);
-    glm::vec3 tVec = wVec;
-    if (abs(wVec.x) < abs(wVec.y) && abs(wVec.x) < abs(wVec.z)) {
-        tVec.x = 1;
-    } else if (abs(wVec.y) < abs(wVec.z) && abs(wVec.y) < abs(wVec.x)) {
-        tVec.y = 1;
-    } else {
-        tVec.z = 1;
-    }
-    glm::vec3 uVec = glm::normalize(glm::cross(tVec, wVec));
-    glm::vec3 vVec = glm::cross(wVec, uVec);
-
-    float radius = hitInfo.material.shininess / 64;
-
-    std::random_device rd;
-    std::default_random_engine generator(rd());
-    std::uniform_real_distribution<float> distribution(0.0, 1.0);
-
-    float theta = glm::radians(360.0f) * distribution(generator);
-
-    float ra = radius * sqrt(distribution(generator));
-
-    float u = ra * glm::cos(theta);
-    float v = ra * glm::sin(theta);
-
-    glm::vec3 newR = glm::normalize(wVec + u * uVec + v * vVec);
-
-    Ray reflectedRay = Ray(ray.origin, newR, ray.t);
-
-    glm::vec3 colorContribution = renderRay(state, reflectedRay, rayDepth + 1);
-
-    hitColor += colorContribution * hitInfo.material.ks;
-
+    // ...
 }
 
 // TODO; Extra feature
