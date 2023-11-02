@@ -163,6 +163,20 @@ uint32_t computeAABBLongestAxis(const AxisAlignedBox& aabb)
         return 2; // z-axis
     }
 }
+//Comparator functions for the sort
+bool comparePrimX(BVHInterface::Primitive& p1, BVHInterface::Primitive& p2) {
+    return computePrimitiveCentroid(p1).x < computePrimitiveCentroid(p2).x;
+}
+
+bool comparePrimY(BVHInterface::Primitive& p1, BVHInterface::Primitive& p2)
+{
+    return computePrimitiveCentroid(p1).y < computePrimitiveCentroid(p2).y;
+}
+
+bool comparePrimZ(BVHInterface::Primitive& p1, BVHInterface::Primitive& p2)
+{
+    return computePrimitiveCentroid(p1).z < computePrimitiveCentroid(p2).z;
+}
 
 // TODO: Standard feature
 // Given a range of BVH triangles, sort these along a specified axis based on their geometric centroid.
@@ -176,32 +190,18 @@ uint32_t computeAABBLongestAxis(const AxisAlignedBox& aabb)
 // This method is unit-tested, so do not change the function signature.
 size_t splitPrimitivesByMedian(const AxisAlignedBox& aabb, uint32_t axis, std::span<BVHInterface::Primitive> primitives)
 {
-     std::vector<float> centroids(primitives.size());
-  for (size_t i = 0; i < primitives.size(); i++) {
-      const BVHInterface::Primitive& primitive = primitives[i];
-      Vertex centroid;
-      centroid.position = computePrimitiveCentroid(primitive);
-      // Extract the coordinate of the centroid along the specified axis
-      centroids[i] = centroid.position[axis];
-  }
-
-  // Sort the primitives based on their centroid coordinate along the specified axis
-  std::sort(primitives.begin(), primitives.end(), [&centroids](const BVHInterface::Primitive& a, const BVHInterface::Primitive& b) {
-      float centroidA = centroids[a.meshID];
-      float centroidB = centroids[b.meshID];
-      return centroidA < centroidB;
-  });
-
-  // Find the split position in the sorted range
-  size_t splitPos = primitives.size() / 2;
-
-  // Adjust the split position to ensure the subrange containing the first element is at least as big as the other,
-  // and both differ at most by one element in size.
-  while (splitPos > 0 && primitives[splitPos].meshID == primitives[splitPos - 1].meshID) {
-      splitPos--;
-  }
-
-  return splitPos;
+   switch (axis) {
+ case 0:
+     std::sort(primitives.begin(), primitives.end(), comparePrimX);
+     break;
+ case 1:
+     std::sort(primitives.begin(), primitives.end(), comparePrimY);
+     break;
+ default:
+     std::sort(primitives.begin(), primitives.end(), comparePrimZ);
+     break;
+ }
+     return (primitives.size() + 1) / 2;
 }
 
 // TODO: Standard feature
@@ -250,35 +250,38 @@ bool intersectRayWithBVH(RenderState& state, const BVHInterface& bvh, Ray& ray, 
         // Note that it is entirely possible for a ray to hit a leaf node, but not its primitives,
         // and it is likewise possible for a ray to hit both children of a node.
          std::vector<int> stack;
- Ray copy = ray;
- copy.t = INFINITY;
- if (intersectRayWithShape(nodes.front().aabb, ray))
-     stack.push_back(0);
- while (!stack.empty()) {
-     BVHInterface::Node node = nodes[stack.back()];
-     stack.pop_back();
-
-     if (intersectRayWithShape(node.aabb, copy)) { // Perform AABB intersection test
-         if (node.isLeaf()) {
-             // Intersect with the leaf's primitives
-             for (int i = node.primitiveOffset(); i < node.primitiveOffset() + node.primitiveCount(); i++) {
-                 //  intersectPrimitive(ray, bvh.getPrimitive(i));
-                 BVHInterface::Primitive prim = primitives[i];
-                 const auto& [v0, v1, v2] = std::tie(prim.v0, prim.v1, prim.v2);
-                 if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) {
-                     updateHitInfo(state, prim, ray, hitInfo);
-                     is_hit = true;
-                 }
-             }
-         } else {
-             // Push the left and right children onto the stack
-
-             if (intersectRayWithShape(nodes.front().aabb, ray))
-             stack.push_back(node.leftChild());
-             stack.push_back(node.rightChild());
-         }
-     }
- }
+       std::vector<int> stack;
+       float_t copy = ray.t;
+       if (intersectRayWithShape(nodes.front().aabb, ray)) {
+           stack.push_back(0);
+           ray.t = copy;
+       }
+       while (!stack.empty()) {
+           BVHInterface::Node node = nodes[stack.back()];
+           stack.pop_back();
+               if (node.isLeaf()) {
+                   // Intersect with the leaf's primitives
+                   for (int i = node.primitiveOffset(); i < node.primitiveOffset() + node.primitiveCount(); i++) {
+                       BVHInterface::Primitive prim = primitives[i];
+                       const auto& [v0, v1, v2] = std::tie(prim.v0, prim.v1, prim.v2);
+                       if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) {
+                           updateHitInfo(state, prim, ray, hitInfo);
+                           is_hit = true;
+                       }
+                   }
+               } else {
+                   size_t left = node.leftChild();
+                   size_t right = node.rightChild();
+                   copy = ray.t;
+                   if (intersectRayWithShape(nodes[left].aabb, ray))
+                       stack.push_back(node.leftChild());
+                   ray.t = copy; 
+                   if (intersectRayWithShape(nodes[right].aabb, ray))
+                       stack.push_back(node.rightChild());
+                   ray.t = copy; 
+               }
+           }
+        
     } else {
         // Naive implementation; simply iterates over all primitives
         for (const auto& prim : primitives) {
