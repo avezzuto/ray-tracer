@@ -103,7 +103,7 @@ Ray generatePassthroughRay(Ray ray, HitInfo hitInfo)
     // Origin of intersection with the plane
     float epsilon = 1e-6;
     glm::vec3 origin = ray.origin + (ray.t + epsilon) * ray.direction;
-    return Ray { origin, ray.direction, 1 };
+    return Ray { origin, ray.direction, std::numeric_limits<float>::max() };
 }
 
 // TODO: standard feature
