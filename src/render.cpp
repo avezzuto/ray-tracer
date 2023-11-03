@@ -70,6 +70,24 @@ std::vector<Ray> generatePixelRays(RenderState& state, const Trackball& camera, 
     }
 }
 
+// Extra method that passes time into the generateRayWithTime method, other than that is is the same method as generatePixelRays
+std::vector<Ray> generatePixelRaysWithTime(RenderState& state, const Trackball& camera, glm::ivec2 pixel, glm::ivec2 screenResolution, float time)
+{
+    if (state.features.numPixelSamples > 1) {
+        if (state.features.enableJitteredSampling) {
+            return generatePixelRaysStratified(state, camera, pixel, screenResolution);
+        } else {
+            return generatePixelRaysMultisampled(state, camera, pixel, screenResolution);
+        }
+    } else {
+        // Generate single camera ray placed at the pixel's center
+        // Note: (-1, -1) at the bottom left of the screen,
+        //       (+1, +1) at the top right of the screen.
+        glm::vec2 position = (glm::vec2(pixel) + 0.5f) / glm::vec2(screenResolution) * 2.f - 1.f;
+        return { camera.generateRayWithTime(position, time) };
+    }
+}
+
 // TODO: standard feature
 // Given a render state, camera, pixel position, and output resolution, generates a set of camera ray samples placed
 // uniformly throughout this pixel.

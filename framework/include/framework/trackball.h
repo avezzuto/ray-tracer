@@ -38,6 +38,8 @@ public:
 	// Generate ray given pixel in NDC space (ranging from -1 to +1. (-1,-1) at bottom left, (+1, +1) at top right).
 	[[nodiscard]] Ray generateRay(const glm::vec2& pixel) const;
 
+	Ray generateRayWithTime(const glm::vec2& pixel, float time) const;
+
 private:
 
 	void mouseButtonCallback(int button, int action, int mods);

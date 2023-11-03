@@ -37,9 +37,18 @@ struct AxisAlignedBox {
 };
 
 struct Sphere {
-    glm::vec3 center { 0.0f };
+    mutable glm::vec3 center { 0.0f };
     float radius = 1.0f;
     Material material;
+    glm::vec3 point1 { 0.0f };
+    glm::vec3 point2 { 0.0f };
+    glm::vec3 point3 { 0.0f };
+
+    // Return the position of the sphere at a given time using a Bezier curve with three points
+    glm::vec3 getPositionAtTime(float t) const
+    {
+        return static_cast<float>(pow(1 - t, 2)) * point1 + 2 * (1 - t) * t * point2 + static_cast<float>(pow(t, 2)) * point3;
+    }
 };
 
 struct PointLight {
@@ -67,10 +76,12 @@ struct ExtraFeatures {
     bool enableGlossyReflection = false;
     bool enableMipmapTextureFiltering = false;
     bool enableMotionBlur = false;
+    bool enableMotionBlurDebug = false;
 
     // Parameters for glossy reflection
     uint32_t numGlossySamples = 1;
 
+    float time = 0.0f;
 };
 
 struct Features {
