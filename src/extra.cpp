@@ -225,7 +225,73 @@ glm::vec3 sampleEnvironmentMap(RenderState& state, Ray ray)
 // This method is unit-tested, so do not change the function signature.
 size_t splitPrimitivesBySAHBin(const AxisAlignedBox& aabb, uint32_t axis, std::span<BVH::Primitive> primitives)
 {
-    using Primitive = BVH::Primitive;
+    const float_t increment = 0.05, startP = 0.2;
+ std::vector<float> axisReducedCenters;
+ size_t psize = primitives.size();
+ // Calculate centers and reduce to the axis coordinate only
+ for (int i = 0; i < psize; i++) {
+     glm::vec3 center = computePrimitiveCentroid(primitives[i]);
+     axisReducedCenters.push_back(center[axis]);
+ }
+ std::sort(axisReducedCenters.begin(), axisReducedCenters.end());
 
-    return 0; // This is clearly not the solution
+ // geometric computations
+ float_t SA;
+ switch (axis) {
+ case 0:
+     SA = (aabb.upper[1] - aabb.lower[1]) * (aabb.upper[2] - aabb.lower[2]);
+     break;
+ case 1:
+     SA = (aabb.upper[0] - aabb.lower[0]) * (aabb.upper[2] - aabb.lower[2]);
+     break;
+ default:
+     SA = (aabb.upper[0] - aabb.lower[0]) * (aabb.upper[1] - aabb.lower[1]);
+     break;
+ }
+ float_t axisSpan = abs(aabb.upper[axis] - aabb.lower[axis]);
+ float_t totalVolume = axisSpan * SA;
+ int bucketsIndex = 0;
+ size_t buckets[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+ for (int i = 0; i < axisReducedCenters.size(); i++) {
+     float_t ac = axisReducedCenters[i] - aabb.lower[axis];
+     if (ac > axisSpan * ((bucketsIndex + 1) * increment) + startP) {
+         if (bucketsIndex == 10) {
+             buckets[11] += psize - 1 - i;
+             break;
+         }
+         bucketsIndex++;
+     } else {
+         buckets[bucketsIndex]++;
+     }
+ }
+
+ size_t numPrimitivesA = 0;
+ size_t numPrimitivesB = psize;
+ float_t volumeA = 0;
+ float_t volumeB = totalVolume;
+ float_t splitMax = INFINITY;
+ size_t finalI = 0;
+ for (int i = 0; i < 12; i++) {
+
+     // Update the number of primitives in bins A and B
+     numPrimitivesA += buckets[i];
+     numPrimitivesB -= buckets[i];
+
+     // Update the surface area of AABBs A and B
+     volumeA += increment * totalVolume;
+     volumeB -= increment * totalVolume;
+
+     // Calculate the cost for bins A and B
+     float costA = numPrimitivesA * volumeA / totalVolume;
+     float costB = numPrimitivesB * volumeB / totalVolume;
+
+     // Calculate the total cost for the pair
+     if (costA + costB < splitMax) {
+         splitMax = costA + costB;
+         finalI = increment * axisSpan;
+     }
+ }
+ if (finalI == 0 || finalI == psize - 1)
+     return (psize + 1) / 2;
+ return finalI;
 }
