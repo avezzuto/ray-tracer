@@ -114,7 +114,7 @@ bool visibilityOfLightSampleBinary(RenderState& state, const glm::vec3& lightPos
 // This method is unit-tested, so do not change the function signature.
 glm::vec3 visibilityOfLightSampleTransparency(RenderState& state, const glm::vec3& lightPosition, const glm::vec3& lightColor, const Ray& ray, const HitInfo& hitInfo)
 {
-    float epsilon = 1e-6;
+    float epsilon = 1e-5;
 
     // Intersection of given ray with plane
     glm::vec3 intersection = { ray.origin + ray.t * ray.direction };
