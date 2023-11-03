@@ -95,8 +95,8 @@ glm::vec3 sampleEnvironmentMap(RenderState& state, Ray ray)
 // This method is unit-tested, so do not change the function signature.
 size_t splitPrimitivesBySAHBin(const AxisAlignedBox& aabb, uint32_t axis, std::span<BVH::Primitive> primitives)
 {
-    const float_t increment = 0.25;
- std::vector<double> axisReducedCenters;
+    const float_t increment = 0.05, startP = 0.2;
+ std::vector<float> axisReducedCenters;
  size_t psize = primitives.size();
  //Calculate centers and reduce to the axis coordinate only
  for (int i = 0; i < psize; i++) {
@@ -118,15 +118,15 @@ size_t splitPrimitivesBySAHBin(const AxisAlignedBox& aabb, uint32_t axis, std::s
      SA = (aabb.upper[0] - aabb.lower[0]) * (aabb.upper[1] - aabb.lower[1]);
      break;
  }
- float_t axisSpan = aabb.upper[axis] - aabb.lower[axis];
+ float_t axisSpan = abs(aabb.upper[axis] - aabb.lower[axis]);
  float_t totalVolume = axisSpan * SA;
  int bucketsIndex = 0;
- size_t buckets[4] = {0,0,0,0};
+ size_t buckets[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
  for (int i = 0; i < axisReducedCenters.size(); i++) {
      float_t ac = axisReducedCenters[i] - aabb.lower[axis];
-     if (ac > (bucketsIndex + 1) * axisSpan * increment) {
-         if (bucketsIndex == 2) {
-             buckets[3] += psize - 1 - i;
+     if (ac > axisSpan * ((bucketsIndex + 1) * increment) + startP) {
+         if (bucketsIndex == 10) {
+             buckets[11] += psize - 1 - i;
              break;
          }
          bucketsIndex++;
@@ -141,7 +141,7 @@ size_t splitPrimitivesBySAHBin(const AxisAlignedBox& aabb, uint32_t axis, std::s
  float_t volumeB = totalVolume;
  float_t splitMax = INFINITY;
  size_t finalI = 0;
- for (int i = 0; i < 3; i++) {
+ for (int i = 0; i < 11; i++) {
 
      // Update the number of primitives in bins A and B
      numPrimitivesA += buckets[i];
@@ -161,5 +161,7 @@ size_t splitPrimitivesBySAHBin(const AxisAlignedBox& aabb, uint32_t axis, std::s
          finalI = increment * axisSpan;
      }
  }
+ if (finalI == 0 || finalI == psize - 1)
+     return (psize + 1) / 2;
  return finalI;
 }
