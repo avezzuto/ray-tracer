@@ -98,14 +98,14 @@ size_t splitPrimitivesBySAHBin(const AxisAlignedBox& aabb, uint32_t axis, std::s
     const float_t increment = 0.05, startP = 0.2;
  std::vector<float> axisReducedCenters;
  size_t psize = primitives.size();
- //Calculate centers and reduce to the axis coordinate only
+ // Calculate centers and reduce to the axis coordinate only
  for (int i = 0; i < psize; i++) {
      glm::vec3 center = computePrimitiveCentroid(primitives[i]);
      axisReducedCenters.push_back(center[axis]);
  }
  std::sort(axisReducedCenters.begin(), axisReducedCenters.end());
 
- //geometric computations
+ // geometric computations
  float_t SA;
  switch (axis) {
  case 0:
@@ -121,7 +121,7 @@ size_t splitPrimitivesBySAHBin(const AxisAlignedBox& aabb, uint32_t axis, std::s
  float_t axisSpan = abs(aabb.upper[axis] - aabb.lower[axis]);
  float_t totalVolume = axisSpan * SA;
  int bucketsIndex = 0;
- size_t buckets[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+ size_t buckets[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
  for (int i = 0; i < axisReducedCenters.size(); i++) {
      float_t ac = axisReducedCenters[i] - aabb.lower[axis];
      if (ac > axisSpan * ((bucketsIndex + 1) * increment) + startP) {
@@ -141,7 +141,7 @@ size_t splitPrimitivesBySAHBin(const AxisAlignedBox& aabb, uint32_t axis, std::s
  float_t volumeB = totalVolume;
  float_t splitMax = INFINITY;
  size_t finalI = 0;
- for (int i = 0; i < 11; i++) {
+ for (int i = 0; i < 12; i++) {
 
      // Update the number of primitives in bins A and B
      numPrimitivesA += buckets[i];
